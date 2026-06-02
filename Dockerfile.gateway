@@ -1,0 +1,68 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Gateway Service Dockerfile — Multi-stage build
+#
+# Stage 1 (builder): Full JDK + Maven to compile and package the JAR
+# Stage 2 (runtime): Minimal JRE-only image — keeps the final image small
+#
+# Why multi-stage?
+#   The final image only needs a JRE to RUN the jar, not the full JDK/Maven.
+#   This reduces image size from ~600MB → ~200MB and eliminates build tools
+#   from the attack surface of the production container.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Stage 1: Build ────────────────────────────────────────────────────────────
+FROM eclipse-temurin:17-jdk-alpine AS builder
+
+WORKDIR /build
+
+# Copy parent POM first — Docker layer cache: Maven deps are re-downloaded
+# only when POM files change, not on every source code change.
+COPY pom.xml .
+COPY gateway-service/pom.xml gateway-service/
+COPY diameter-simulator/pom.xml diameter-simulator/
+
+# Download all Maven dependencies into the cache layer
+RUN apk add --no-cache maven && \
+    mvn dependency:go-offline -pl gateway-service -am -q
+
+# Now copy the source code and build
+COPY gateway-service/src gateway-service/src
+COPY diameter-simulator/src diameter-simulator/src
+
+# Build only the gateway-service JAR (skip tests — tests run in CI)
+RUN mvn package -pl gateway-service -am -DskipTests -q
+
+# ── Stage 2: Runtime ──────────────────────────────────────────────────────────
+FROM eclipse-temurin:17-jre-alpine
+
+# Add a non-root user for security — never run Java services as root
+RUN addgroup -S telecom && adduser -S telecom -G telecom
+
+WORKDIR /app
+
+# Copy only the fat JAR from the builder stage
+COPY --from=builder /build/gateway-service/target/gateway-service-*.jar app.jar
+
+# Change ownership to the non-root user
+RUN chown telecom:telecom app.jar
+
+USER telecom
+
+# Expose the REST API port
+EXPOSE 8080
+
+# Health check — Docker will restart the container if the gateway becomes unhealthy
+HEALTHCHECK --interval=15s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
+
+# JVM tuning for containers:
+#   -XX:+UseContainerSupport  — JVM respects cgroup memory limits (not host RAM)
+#   -XX:MaxRAMPercentage=75   — Use max 75% of container memory for heap
+#   -XX:+UseG1GC              — G1 GC: good balance of latency and throughput
+#   -Djava.security.egd      — Faster SecureRandom startup (uses /dev/urandom)
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-XX:+UseG1GC", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]

@@ -1,0 +1,88 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.yml — Telecom-Bridge full stack
+#
+# Services:
+#   diameter-simulator  — OCS simulator on port 3868
+#   gateway             — REST-to-Diameter gateway on port 8080
+#
+# Startup order:
+#   diameter-simulator starts first.
+#   gateway waits for it to be healthy before starting its own connect loop.
+#   (The gateway also has built-in reconnect logic, so even if the simulator
+#    is briefly unavailable, it will retry automatically.)
+#
+# Network:
+#   Both services share the "telecom-net" bridge network.
+#   The gateway connects to the simulator using the service name "diameter-simulator"
+#   (Docker's internal DNS resolves service names to container IPs).
+#
+# Usage:
+#   docker compose up --build          # Build images and start both services
+#   docker compose up -d               # Start in background
+#   docker compose logs -f gateway     # Tail gateway logs
+#   docker compose down                # Stop and remove containers
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+
+  # ── Diameter OCS Simulator ─────────────────────────────────────────────────
+  diameter-simulator:
+    build:
+      context: .
+      dockerfile: Dockerfile.simulator
+    container_name: diameter-simulator
+    networks:
+      - telecom-net
+    ports:
+      - "3868:3868"          # Expose so you can point Wireshark at the host port
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 3868 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 256m
+          cpus: "0.5"
+
+  # ── REST Gateway ───────────────────────────────────────────────────────────
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    container_name: telecom-gateway
+    networks:
+      - telecom-net
+    ports:
+      - "8080:8080"
+    environment:
+      # Override application.yml defaults to use Docker service name
+      DIAMETER_HOST: diameter-simulator
+      DIAMETER_PORT: 3868
+      # Increase timeout slightly for containerized environment
+      DIAMETER_TIMEOUT_MS: 5000
+      # Spring profile (can switch to "prod" for minimal logs)
+      SPRING_PROFILES_ACTIVE: default
+    depends_on:
+      diameter-simulator:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: "1.0"
+
+networks:
+  telecom-net:
+    driver: bridge
+    name: telecom-net

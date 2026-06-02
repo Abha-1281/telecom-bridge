@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Diameter Simulator Dockerfile — Multi-stage build
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Stage 1: Build ────────────────────────────────────────────────────────────
+FROM eclipse-temurin:17-jdk-alpine AS builder
+
+WORKDIR /build
+
+COPY pom.xml .
+COPY gateway-service/pom.xml gateway-service/
+COPY diameter-simulator/pom.xml diameter-simulator/
+
+RUN apk add --no-cache maven && \
+    mvn dependency:go-offline -pl diameter-simulator -am -q
+
+COPY diameter-simulator/src diameter-simulator/src
+COPY gateway-service/src gateway-service/src
+
+# Build the fat jar (assembly plugin produces diameter-simulator.jar)
+RUN mvn package -pl diameter-simulator -am -DskipTests -q
+
+# ── Stage 2: Runtime ──────────────────────────────────────────────────────────
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S telecom && adduser -S telecom -G telecom
+
+WORKDIR /app
+
+COPY --from=builder /build/diameter-simulator/target/diameter-simulator.jar app.jar
+
+RUN chown telecom:telecom app.jar
+
+USER telecom
+
+# Diameter protocol port (standard port 3868)
+EXPOSE 3868
+
+HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=3 \
+  CMD nc -z localhost 3868 || exit 1
+
+ENTRYPOINT ["java", \
+  "-XX:+UseContainerSupport", \
+  "-XX:MaxRAMPercentage=75.0", \
+  "-XX:+UseG1GC", \
+  "-Djava.security.egd=file:/dev/./urandom", \
+  "-jar", "app.jar"]
