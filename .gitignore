@@ -1,0 +1,11 @@
+target/
+*.class
+*.jar
+!diameter-simulator/target/diameter-simulator.jar
+.idea/
+*.iml
+*.iws
+*.ipr
+.DS_Store
+*.log
+*.pcap

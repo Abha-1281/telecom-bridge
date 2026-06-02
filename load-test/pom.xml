@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.telecom</groupId>
+    <artifactId>telecom-bridge</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+  </parent>
+
+  <artifactId>load-test</artifactId>
+  <name>Load Test (Gatling)</name>
+
+  <properties>
+    <gatling.version>3.10.5</gatling.version>
+    <gatling-maven-plugin.version>4.9.6</gatling-maven-plugin.version>
+    <scala-maven-plugin.version>4.9.1</scala-maven-plugin.version>
+    <!-- Target gateway URL — override via -Dgatling.baseUrl=http://... -->
+    <gatling.baseUrl>http://localhost:8080</gatling.baseUrl>
+    <!-- Load profile -->
+    <gatling.targetTps>100</gatling.targetTps>
+    <gatling.totalTransactions>500000</gatling.totalTransactions>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>io.gatling.highcharts</groupId>
+      <artifactId>gatling-charts-highcharts</artifactId>
+      <version>${gatling.version}</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src/test/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+
+    <plugins>
+      <!-- Scala compiler — needed for Gatling DSL -->
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>${scala-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Gatling Maven plugin — runs simulations -->
+      <plugin>
+        <groupId>io.gatling</groupId>
+        <artifactId>gatling-maven-plugin</artifactId>
+        <version>${gatling-maven-plugin.version}</version>
+        <configuration>
+          <simulationClass>com.telecom.loadtest.ChargeSimulation</simulationClass>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

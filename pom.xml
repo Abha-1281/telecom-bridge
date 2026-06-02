@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        PARENT POM — This is the coordinator of the whole project.
+        It does NOT contain any Java code itself.
+        It tells Maven: "These are my child modules, build them all."
+    -->
+    <groupId>com.telecom</groupId>
+    <artifactId>telecom-bridge</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>pom</packaging>  <!-- "pom" = I am a parent, not a jar -->
+
+    <name>Telecom Bridge Gateway</name>
+    <description>
+        High-performance REST-to-Diameter Gateway.
+        Translates JSON REST calls into Diameter Credit Control
+        messages (RFC 6733 / RFC 4006) and returns responses.
+    </description>
+
+    <!-- Child modules — Maven will build these in order -->
+    <modules>
+        <module>diameter-simulator</module>
+        <module>gateway-service</module>
+        <module>load-test</module>
+    </modules>
+
+    <!--
+        PROPERTIES — Central version management.
+        Change a version here → it changes everywhere.
+        This prevents "I updated netty in one module but forgot the other" bugs.
+    -->
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Library versions — defined ONCE here -->
+        <spring.boot.version>3.2.5</spring.boot.version>
+        <netty.version>4.1.108.Final</netty.version>
+        <jackson.version>2.17.0</jackson.version>
+        <slf4j.version>2.0.13</slf4j.version>
+        <logback.version>1.4.14</logback.version>
+        <junit.version>5.10.2</junit.version>
+        <mockito.version>5.11.0</mockito.version>
+    </properties>
+
+    <!--
+        DEPENDENCY MANAGEMENT — Pre-declares versions for all possible deps.
+        Child modules can use these libraries WITHOUT specifying a version.
+        Maven resolves version from here automatically.
+    -->
+    <dependencyManagement>
+        <dependencies>
+
+            <!-- Spring Boot BOM (Bill of Materials) —
+                 imports ALL spring boot managed versions at once -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring.boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Netty — The async networking engine for Diameter protocol -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+
+            <!-- Jackson — JSON serialization/deserialization -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+
+            <!-- Logging -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+
+            <!-- Testing -->
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <!-- Shared build configuration for ALL child modules -->
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.13.0</version>
+                    <configuration>
+                        <source>17</source>
+                        <target>17</target>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+</project>
