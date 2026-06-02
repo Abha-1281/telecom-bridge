@@ -1,0 +1,55 @@
+# ──────────────────────────────────────────────────────────────────────
+# Telecom Bridge Gateway — Application Configuration
+# ──────────────────────────────────────────────────────────────────────
+
+server:
+  port: 8080
+  # Netty (the embedded server for WebFlux) configuration
+  netty:
+    connection-timeout: 5000ms
+
+spring:
+  application:
+    name: telecom-bridge-gateway
+  # WebFlux specific settings
+  webflux:
+    base-path: ""
+
+# ──────────────────────────────────────────────────────────────────────
+# Diameter Client Configuration
+# ──────────────────────────────────────────────────────────────────────
+diameter:
+  server:
+    host: ${DIAMETER_HOST:localhost}   # Override via env var in Docker
+    port: ${DIAMETER_PORT:3868}        # Standard Diameter port (IANA assigned)
+
+  client:
+    origin-host: gateway.telecom.com   # Our Diameter identity
+    origin-realm: telecom.com          # Our Diameter realm
+    timeout-ms: ${DIAMETER_TIMEOUT_MS:5000}   # Max wait for CCA response
+    watchdog-interval-seconds: 30      # Send DWR every 30 seconds
+
+# ──────────────────────────────────────────────────────────────────────
+# Logging Configuration
+# ──────────────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.telecom.gateway: INFO
+    com.telecom.gateway.diameter: DEBUG   # More verbose for Diameter protocol
+    io.netty: WARN
+    DiameterWire: WARN                    # Set to DEBUG locally to see raw bytes
+    org.springframework: WARN
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %-40logger{40} - %msg%n"
+
+# ──────────────────────────────────────────────────────────────────────
+# Actuator (Health Check) Configuration
+# ──────────────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
