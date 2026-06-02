@@ -8,4 +8,5 @@ target/
 *.ipr
 .DS_Store
 *.log
-*.pcap
+# *.pcap  -- transaction_flow.pcap is committed as a deliverable
+!transaction_flow.pcap
