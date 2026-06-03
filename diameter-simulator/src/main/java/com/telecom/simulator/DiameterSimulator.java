@@ -82,7 +82,7 @@ public class DiameterSimulator {
             log.info("✅ Diameter Simulator listening on port {}", DIAMETER_PORT);
             log.info("   Waiting for connections...");
             log.info("   Handles: CER/CEA | DWR/DWA | CCR/CCA");
-            log.info("   CCR response delay: 50-100ms (simulated processing)");
+            log.info("   CCR response delay: 5-20ms (simulated processing)");
 
             // Block until server channel closes (i.e., until shutdown)
             future.channel().closeFuture().sync();

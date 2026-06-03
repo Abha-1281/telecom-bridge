@@ -101,12 +101,11 @@ class ChargeSimulation extends Simulation {
   .assertions(
     // All requests must succeed (0% errors)
     global.failedRequests.percent.is(0),
-    // p95 latency ≤ 200ms (simulator adds 50-100ms artificial delay; gateway overhead is ~10ms)
-    // In production (without artificial delay) this would be ≤ 100ms
-    global.responseTime.percentile(95).lte(200),
-    // p99 latency ≤ 300ms
-    global.responseTime.percentile(99).lte(300),
-    // Mean latency ≤ 150ms (simulator median delay ~75ms + gateway ~10ms)
-    global.responseTime.mean.lte(150)
+    // p95 latency ≤ 100ms — exact requirement from the task specification
+    global.responseTime.percentile(95).lte(100),
+    // p99 latency ≤ 150ms
+    global.responseTime.percentile(99).lte(150),
+    // Mean latency ≤ 50ms (simulator 5-20ms delay + gateway ~10ms overhead)
+    global.responseTime.mean.lte(50)
   )
 }

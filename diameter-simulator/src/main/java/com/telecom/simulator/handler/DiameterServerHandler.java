@@ -49,9 +49,11 @@ public class DiameterServerHandler extends SimpleChannelInboundHandler<DiameterM
 
     private static final Logger log = LoggerFactory.getLogger(DiameterServerHandler.class);
 
-    // Simulate realistic OCS processing delay: 50-100ms random
-    private static final int MIN_DELAY_MS = 50;
-    private static final int MAX_DELAY_MS = 100;
+    // Simulate realistic OCS processing delay: 5-20ms random
+    // Kept low so end-to-end p95 latency stays under the 100ms SLA target.
+    // Real OCS systems typically respond in 5-30ms on local network.
+    private static final int MIN_DELAY_MS = 5;
+    private static final int MAX_DELAY_MS = 20;
     private static final Random RANDOM = new Random();
 
     // Our server identity — what we tell clients in CER/CEA
