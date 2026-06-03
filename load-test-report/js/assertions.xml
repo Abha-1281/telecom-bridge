@@ -1,0 +1,14 @@
+<testsuite name="com.telecom.loadtest.ChargeSimulation" tests="4" errors="0" failures="0" time="0">
+  <testcase name="Global: percentage of failed events is 0.0" status="true" time="0">
+  <system-out>Global: percentage of failed events is 0.0</system-out>
+</testcase>
+<testcase name="Global: 95th percentile of response time is less than or equal to 100.0" status="true" time="0">
+  <system-out>Global: 95th percentile of response time is less than or equal to 100.0</system-out>
+</testcase>
+<testcase name="Global: 99th percentile of response time is less than or equal to 150.0" status="true" time="0">
+  <system-out>Global: 99th percentile of response time is less than or equal to 150.0</system-out>
+</testcase>
+<testcase name="Global: mean of response time is less than or equal to 50.0" status="true" time="0">
+  <system-out>Global: mean of response time is less than or equal to 50.0</system-out>
+</testcase>
+</testsuite>
