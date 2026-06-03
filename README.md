@@ -404,8 +404,3 @@ nc -zv localhost 3868
 
 4. **Unsigned integers** — Diameter Unsigned32 must be stored as Java `long` to avoid sign issues. Read with `& 0xFFFFFFFFL`.
 
----
-
-## License
-
-MIT
